@@ -5,42 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Spice Garden Restaurant</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    #chat-box {
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
 
-    #chat-box.hidden {
-      transform: translateY(20px);
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #resizer {
-      cursor: ew-resize;
-      width: 6px;
-      background-color: #cbd5e1;
-    }
-
-    #chat-body {
-      height: 100%;
-      transition: height 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #chat-body.collapsed {
-      height: 0;
-      overflow: hidden;
-    }
-  </style>
+  <!-- 👇 Chat Widget Styles -->
+  <link rel="stylesheet" href="/chat-widget.css" />
 </head>
 <body class="bg-white text-gray-800 font-sans">
 
-  <!-- 🏠 Restaurant Info -->
+  <!-- 🏠 Page Content -->
   <main class="p-8 max-w-4xl mx-auto">
     <h1 class="text-4xl font-bold mb-4">Welcome to Spice Garden Restaurant</h1>
-    <p class="mb-6 text-lg">Discover authentic Indian cuisine with a curated selection of dishes made from fresh ingredients. Explore our menu, compare prices, and get help creating your perfect order!</p>
+    <p class="mb-6 text-lg">Discover authentic Indian cuisine with a curated selection of dishes made from fresh ingredients.</p>
 
     <section class="mb-8">
       <h2 class="text-2xl font-semibold mb-2">Popular Dishes</h2>
@@ -54,162 +28,7 @@
     </section>
   </main>
 
-  <!-- 💬 Chat Toggle -->
-  <button onclick="toggleChat()" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 z-50">
-    💬 Chat
-  </button>
-
-  <!-- 💬 Chat Box -->
-  <div id="chat-box" class="hidden fixed bottom-20 right-6 h-[500px] flex bg-white border shadow-lg rounded-lg z-40" style="width: 450px;">
-
-    <!-- ↔️ Resizer -->
-    <div id="resizer" class="h-full"></div>
-
-    <!-- 💬 Chat Panel -->
-    <div class="flex flex-col w-full h-full">
-
-      <div class="flex justify-between items-center bg-blue-600 text-white p-3 font-semibold rounded-t-lg">
-        <span>Ask the Assistant</span>
-        <div class="flex items-center gap-2">
-          <button onclick="minimizeChat()" class="text-white text-lg">▁</button>
-        </div>
-      </div>
-
-      <!-- Chat content -->
-      <div id="chat-body" class="flex flex-col flex-1" style="height: 100%;">
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-100"></div>
-
-        <div class="flex items-center p-2 border-t bg-white">
-          <textarea id="user-input" rows="1" placeholder="Type your message..."
-            class="flex-1 p-2 border rounded resize-none focus:outline-none focus:ring"
-            onkeydown="handleEnter(event)"></textarea>
-          <button onclick="sendMessage()" class="ml-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Send</button>
-          <button onclick="resetChat()" class="ml-2 px-3 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Reset</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <script>
-    let sessionId = "session_" + Math.random().toString(36).substring(2);
-
-    async function startSession() {
-      await fetch('/start-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId })
-      });
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById('user-input');
-      const message = input.value.trim();
-      if (!message) return;
-
-      appendMessage('user', message);
-      input.value = '';
-      appendMessage('assistant', 'Typing...', true);
-
-      const res = await fetch('/send-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, message })
-      });
-
-      const data = await res.json();
-      removeTyping();
-      appendMessage('assistant', data.response);
-    }
-
-    async function resetChat() {
-      await fetch('/clear-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId })
-      });
-      sessionId = "session_" + Math.random().toString(36).substring(2);
-      await startSession();
-      document.getElementById('chat-container').innerHTML = '';
-    }
-
-    function appendMessage(role, content, isTyping = false) {
-      const div = document.createElement('div');
-      div.className = `text-sm rounded p-2 max-w-xl whitespace-pre-wrap ${role === 'user' ? 'bg-blue-100 self-end' : 'bg-green-100 self-start'}`;
-      div.textContent = `${role === 'user' ? 'You' : 'Assistant'}: ${content}`;
-      if (isTyping) div.id = "typing-indicator";
-
-      const time = document.createElement('div');
-      time.className = "text-xs text-gray-500 mt-1";
-      time.textContent = new Date().toLocaleTimeString();
-      div.appendChild(time);
-
-      document.getElementById('chat-container').appendChild(div);
-      div.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function removeTyping() {
-      const typing = document.getElementById('typing-indicator');
-      if (typing) typing.remove();
-    }
-
-    function handleEnter(event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-    }
-
-    function minimizeChat() {
-      document.getElementById("chat-box").classList.add("hidden");
-    }
-
-    function toggleChat() {
-      const chatBox = document.getElementById("chat-box");
-      chatBox.classList.remove("hidden");
-    }
-
-    function maximizeChat() {
-      document.getElementById("chat-body").style.display = "flex";
-      document.getElementById("maximizeBtn").classList.add("hidden");
-      document.getElementById("minimizeBtn").classList.remove("hidden");
-    }
-
-    let isCollapsed = false;
-
-    function toggleChatCollapse() {
-      const body = document.getElementById("chat-body");
-      const button = document.getElementById("minimizeBtn");
-
-      isCollapsed = !isCollapsed;
-      body.classList.toggle("collapsed", isCollapsed);
-      button.textContent = isCollapsed ? "🗖" : "▁";
-    }
-
-    // 🔧 Drag-to-resize
-    const resizer = document.getElementById("resizer");
-    const chatBox = document.getElementById("chat-box");
-    let isResizing = false;
-
-    resizer.addEventListener("mousedown", function () {
-      isResizing = true;
-      document.body.style.cursor = "ew-resize";
-    });
-
-    document.addEventListener("mousemove", function (e) {
-      if (!isResizing) return;
-      const newWidth = window.innerWidth - e.clientX - 24;
-      const maxWidth = 1000;
-      const minWidth = 300;
-      chatBox.style.width = `${Math.max(minWidth, Math.min(maxWidth, newWidth))}px`;
-    });
-
-    document.addEventListener("mouseup", function () {
-      isResizing = false;
-      document.body.style.cursor = "";
-    });
-
-    startSession();
-  </script>
+  <!-- 👇 Chat Widget Script -->
+  <script src="/chat-widget.js"></script>
 </body>
 </html>

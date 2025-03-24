@@ -141,4 +141,5 @@ def clear_session(req: ClearSessionRequest):
         return {"message": f"Session '{req.session_id}' cleared."}
     return JSONResponse(status_code=404, content={"error": "Session not found."})
 
+# ✅ Serve everything in /static at the root /
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
