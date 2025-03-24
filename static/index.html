@@ -3,16 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restaurant Agent Chat</title>
+  <title>Restaurant Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex flex-col h-screen">
-  <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+<body class="bg-white text-gray-800 font-sans">
+  <!-- Main Home Content -->
+  <main class="p-8 max-w-4xl mx-auto">
+    <h1 class="text-4xl font-bold mb-4">Welcome to Spice Garden Restaurant</h1>
+    <p class="mb-6 text-lg">Discover authentic Indian cuisine with a curated selection of dishes made from fresh ingredients. Explore our menu, compare prices, and get help creating your perfect order!</p>
 
-  <div id="input-container" class="flex items-center p-4 bg-white border-t border-gray-300">
-    <textarea id="user-input" rows="1" placeholder="Type your message..." class="flex-1 p-2 border rounded resize-none focus:outline-none focus:ring" onkeydown="handleEnter(event)"></textarea>
-    <button onclick="sendMessage()" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Send</button>
-    <button onclick="resetChat()" class="ml-2 px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Reset</button>
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold mb-2">Popular Dishes</h2>
+      <ul class="list-disc ml-6 text-lg">
+        <li>Paneer Butter Masala - ₹250</li>
+        <li>Chicken Biryani - ₹320</li>
+        <li>Garlic Naan - ₹60</li>
+        <li>Chole Bhature - ₹180</li>
+        <li>Mango Lassi - ₹90</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-semibold mb-2">Opening Hours</h2>
+      <p class="text-lg">Monday - Sunday: 11:00 AM - 11:00 PM</p>
+    </section>
+  </main>
+
+  <!-- Floating Chat Button -->
+  <button id="chat-toggle" onclick="toggleChat()" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700">
+    💬 Chat
+  </button>
+
+  <!-- Chat Widget -->
+  <div id="chat-box" class="hidden fixed bottom-20 right-6 w-96 max-h-[80vh] flex flex-col border rounded-lg shadow-lg bg-white">
+    <div class="bg-blue-600 text-white p-3 font-semibold rounded-t-lg">Ask the Assistant</div>
+    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-100"></div>
+    <div class="flex items-center p-2 border-t bg-white">
+      <textarea id="user-input" rows="1" placeholder="Type your message..." class="flex-1 p-2 border rounded resize-none focus:outline-none focus:ring" onkeydown="handleEnter(event)"></textarea>
+      <button onclick="sendMessage()" class="ml-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Send</button>
+      <button onclick="resetChat()" class="ml-2 px-3 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Reset</button>
+    </div>
   </div>
 
   <script>
@@ -35,8 +65,6 @@
 
       appendMessage('user', message);
       input.value = '';
-
-      // Typing indicator
       appendMessage('assistant', 'Typing...', true);
 
       const res = await fetch('/send-message', {
@@ -65,12 +93,10 @@
       const div = document.createElement('div');
       div.className = `message ${role}`;
       div.classList.add("text-sm", "rounded", "p-2", "max-w-xl", "whitespace-pre-wrap");
-
       const roleClasses = role === 'user'
         ? ["bg-blue-100", "self-end"]
         : ["bg-green-100", "self-start"];
       div.classList.add(...roleClasses);
-
       div.textContent = `${role === 'user' ? 'You' : 'Assistant'}: ${content}`;
       if (isTyping) div.id = "typing-indicator";
 
@@ -95,7 +121,14 @@
       }
     }
 
-    // Initialize
+    function toggleChat() {
+      const chatBox = document.getElementById('chat-box');
+      chatBox.classList.toggle('hidden');
+      if (!chatBox.classList.contains('hidden')) {
+        document.getElementById('user-input').focus();
+      }
+    }
+
     startSession();
   </script>
 </body>
