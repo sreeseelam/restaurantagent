@@ -1,13 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restaurant Assistant</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spice Garden Restaurant</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #chat-box {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #chat-box.hidden {
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #resizer {
+      cursor: ew-resize;
+      width: 6px;
+      background-color: #cbd5e1;
+    }
+  </style>
 </head>
 <body class="bg-white text-gray-800 font-sans">
-  <!-- Main Home Content -->
+
+  <!-- 🏠 Restaurant Info -->
   <main class="p-8 max-w-4xl mx-auto">
     <h1 class="text-4xl font-bold mb-4">Welcome to Spice Garden Restaurant</h1>
     <p class="mb-6 text-lg">Discover authentic Indian cuisine with a curated selection of dishes made from fresh ingredients. Explore our menu, compare prices, and get help creating your perfect order!</p>
@@ -22,40 +40,53 @@
         <li>Mango Lassi - ₹90</li>
       </ul>
     </section>
-
-    <section>
-      <h2 class="text-2xl font-semibold mb-2">Opening Hours</h2>
-      <p class="text-lg">Monday - Sunday: 11:00 AM - 11:00 PM</p>
-    </section>
   </main>
 
-  <!-- Floating Chat Button -->
-  <button id="chat-toggle" onclick="toggleChat()" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700">
+  <!-- 💬 Chat Toggle -->
+  <button onclick="toggleChat()" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 z-50">
     💬 Chat
   </button>
 
-  <!-- Chat Widget -->
-  <div id="chat-box" class="hidden fixed bottom-20 right-6 w-96 max-h-[80vh] flex flex-col border rounded-lg shadow-lg bg-white">
-    <div class="bg-blue-600 text-white p-3 font-semibold rounded-t-lg">Ask the Assistant</div>
-    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-100"></div>
-    <div class="flex items-center p-2 border-t bg-white">
-      <textarea id="user-input" rows="1" placeholder="Type your message..." class="flex-1 p-2 border rounded resize-none focus:outline-none focus:ring" onkeydown="handleEnter(event)"></textarea>
-      <button onclick="sendMessage()" class="ml-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Send</button>
-      <button onclick="resetChat()" class="ml-2 px-3 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Reset</button>
+  <!-- 💬 Chat Box -->
+  <div id="chat-box" class="hidden fixed bottom-20 right-6 h-[500px] flex bg-white border shadow-lg rounded-lg z-40" style="width: 450px;">
+
+    <!-- ↔️ Resizer -->
+    <div id="resizer" class="h-full"></div>
+
+    <!-- 💬 Chat Panel -->
+    <div class="flex flex-col w-full h-full">
+
+      <!-- Header -->
+      <div class="bg-blue-600 text-white p-3 font-semibold rounded-t-lg">Ask the Assistant</div>
+
+      <!-- Messages -->
+      <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-100"></div>
+
+      <!-- Input -->
+      <div class="flex items-center p-2 border-t bg-white">
+        <textarea id="user-input" rows="1" placeholder="Type your message..."
+          class="flex-1 p-2 border rounded resize-none focus:outline-none focus:ring"
+          onkeydown="handleEnter(event)"></textarea>
+        <button onclick="sendMessage()" class="ml-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Send</button>
+        <button onclick="resetChat()" class="ml-2 px-3 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Reset</button>
+      </div>
+
     </div>
   </div>
 
   <script>
     let sessionId = "session_" + Math.random().toString(36).substring(2);
 
+    function toggleChat() {
+      document.getElementById("chat-box").classList.toggle("hidden");
+    }
+
     async function startSession() {
-      const res = await fetch('/start-session', {
+      await fetch('/start-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId })
       });
-      const data = await res.json();
-      console.log('Session started:', data);
     }
 
     async function sendMessage() {
@@ -91,12 +122,7 @@
 
     function appendMessage(role, content, isTyping = false) {
       const div = document.createElement('div');
-      div.className = `message ${role}`;
-      div.classList.add("text-sm", "rounded", "p-2", "max-w-xl", "whitespace-pre-wrap");
-      const roleClasses = role === 'user'
-        ? ["bg-blue-100", "self-end"]
-        : ["bg-green-100", "self-start"];
-      div.classList.add(...roleClasses);
+      div.className = `text-sm rounded p-2 max-w-xl whitespace-pre-wrap ${role === 'user' ? 'bg-blue-100 self-end' : 'bg-green-100 self-start'}`;
       div.textContent = `${role === 'user' ? 'You' : 'Assistant'}: ${content}`;
       if (isTyping) div.id = "typing-indicator";
 
@@ -121,13 +147,28 @@
       }
     }
 
-    function toggleChat() {
-      const chatBox = document.getElementById('chat-box');
-      chatBox.classList.toggle('hidden');
-      if (!chatBox.classList.contains('hidden')) {
-        document.getElementById('user-input').focus();
-      }
-    }
+    // 🔧 Drag-to-resize
+    const resizer = document.getElementById("resizer");
+    const chatBox = document.getElementById("chat-box");
+    let isResizing = false;
+
+    resizer.addEventListener("mousedown", function () {
+      isResizing = true;
+      document.body.style.cursor = "ew-resize";
+    });
+
+    document.addEventListener("mousemove", function (e) {
+      if (!isResizing) return;
+      const newWidth = window.innerWidth - e.clientX - 24;
+      const maxWidth = 1000;
+      const minWidth = 300;
+      chatBox.style.width = `${Math.max(minWidth, Math.min(maxWidth, newWidth))}px`;
+    });
+
+    document.addEventListener("mouseup", function () {
+      isResizing = false;
+      document.body.style.cursor = "";
+    });
 
     startSession();
   </script>
